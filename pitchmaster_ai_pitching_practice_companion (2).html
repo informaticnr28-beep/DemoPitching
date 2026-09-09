@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PitchMaster AI - แอปฝึกพูดและซ้อม Pitching</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e',
+              900: '#134e4a',
+            },
+            accent: {
+              500: '#6366f1',
+              600: '#4f46e5',
+            }
+          },
+          fontFamily: {
+            sans: ['Kanit', 'Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Google Fonts: Kanit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- React & Babel CDNs -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      font-family: 'Kanit', 'Inter', sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #0d9488;
+    }
+    .glass-panel {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .pulse-glow {
+      box-shadow: 0 0 25px rgba(20, 184, 166, 0.4);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-teal-500 selection:text-white">
+
+  <div id="root" class="flex-grow flex flex-col min-h-screen relative"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useMemo } = React;
+
+    const DEFAULT_SNAPCHILL_SCRIPT = {
+      id: "snapchill-demo",
+      title: "SnapChill — สคริปต์ Pitching อุปกรณ์หักหลอดแก้วยา",
+      description: "สคริปต์นวัตกรรมอุปกรณ์หักหลอดแก้วเพื่อความปลอดภัยของบุคลากรทางการแพทย์ (14 สไลด์)",
+      slides: [
+        {
+          id: 1,
+          slideNumber: 1,
+          title: "สไลด์ 1: หน้าจอค้างสำหรับเปิด",
+          script: "SnapChill — สคริปต์ Pitching อุปกรณ์หักหลอดแก้วยา ออกแบบโดยพยาบาล เพื่อพยาบาลและบุคลากรทางการแพทย์",
+          keywords: ["SnapChill", "อุปกรณ์หักหลอดแก้วยา", "พยาบาล"],
+          durationSec: 10,
+          notes: "หน้าจอเปิด นำเสนอชื่อนวัตกรรมและความตั้งใจ"
+        },
+        {
+          id: 2,
+          slideNumber: 2,
+          title: "สไลด์ 2: จุดเริ่มต้นของปัญหาและแผลแรก",
+          script: "จำครั้งแรกที่คุณถูกแก้วบาดมือได้ไหมคะ สำหรับพยาบาลจบใหม่หลายคน ครั้งแรกที่ต้องหักแอมป์ยา จบลงด้วยเลือดและบาดแผลที่ปลายนิ้ว ในฐานะพยาบาลที่เคยเจ็บกับปัญหานี้เอง และมาพร้อมกับทางแก้ที่พัฒนามาแล้วกว่า 3 ปี SnapChill อุปกรณ์หักหลอดแก้ว ออกแบบโดยพยาบาล เพื่อพยาบาลและบุคลากรทางการแพทย์ที่ต้องหักแอมป์ยาทุกวัน",
+          keywords: ["แก้วบาดมือ", "หักแอมป์ยา", "เลือดและบาดแผล", "พัฒนามาแล้วกว่า 3 ปี", "SnapChill"],
+          durationSec: 30,
+          notes: "ใช้น้ำเสียงสะท้อนอารมณ์ความรู้สึกเพื่อสร้าง Hook แรก"
+        },
+        {
+          id: 3,
+          slideNumber: 3,
+          title: "สไลด์ 3: ข้อมูลสถิติความถี่อุบัติเหตุ",
+          script: "ปี 2567 เรามีการสำรวจพยาบาลในโรงพยาบาลรามาธิบดี 135 คน ถึงแม้ไม่ใช่ตัวแทนทั้งประเทศ แต่เราได้ข้อมูลที่สำคัญมาก 85.8% เคยถูกแก้วบาดจากการหักแอมป์ยา ตั้งแต่แผลถลอกเล็ก ๆ ไปจนถึงแผลลึกที่ต้องเย็บหลายเข็ม นี่ไม่ใช่อุบัติเหตุที่นาน ๆ เกิดที ค่ะ นี่คือเรื่องปกติที่เกิดกับบุคลากรหลายๆคนที่ต้องหักแอมป์ยา",
+          keywords: ["สำรวจพยาบาล 135 คน", "85.8%", "แก้วบาด", "แผลลึกต้องเย็บ", "เรื่องปกติ"],
+          durationSec: 30,
+          notes: "เน้นย้ำตัวเลขสถิติ 85.8% ให้ชัดเจนเพื่อสร้างน้ำหนัก"
+        },
+        {
+          id: 4,
+          slideNumber: 4,
+          title: "สไลด์ 4: ความกลัวสะสมและความเสี่ยงต่อผู้ป่วย",
+          script: "แต่ตัวเลขที่น่ากังวลกว่าคือ เกือบ 80% (76.9%) เกิดความกลัวสะสม หวาดวิตกทุกครั้งที่ต้องเตรียมยาฉุกเฉิน ลองนึกภาพตามนะคะ ขณะที่ผู้ป่วยกำลังวิกฤต ทุกวินาทีมีค่า แต่มือของคนเตรียมยากลับลังเลเพราะกลัวโดนบาด นี่ไม่ใช่แค่ความเสี่ยงของบุคลากรค่ะ แต่เป็นความเสี่ยงของผู้ป่วยด้วย และข้อสรุปที่ทำให้เราเริ่มโครงการนี้คือ 100% ของผู้ตอบแบบสำรวจ ต้องการอุปกรณ์ช่วยหักที่มีประสิทธิภาพ ไม่มีใครบอกว่าไม่จำเป็น แม้แต่คนเดียวค่ะ",
+          keywords: ["เกือบ 80%", "ความกลัวสะสม", "ยาฉุกเฉิน", "ความเสี่ยงของผู้ป่วย", "100% ต้องการอุปกรณ์"],
+          durationSec: 35,
+          notes: "เชื่อมโยงความปลอดภัยของบุคลากรไปสู่ความปลอดภัยของผู้ป่วย"
+        },
+        {
+          id: 5,
+          slideNumber: 5,
+          title: "สไลด์ 5: แนะนำ SnapChill และแนวคิดหลัก",
+          script: "และนี่คือ SnapChill อุปกรณ์ช่วยหักหลอดแก้วยา ภายใต้แนวคิด หักง่าย ปลอดภัย ทุกการใช้งาน ความปลอดภัย ตัวอุปกรณ์ครอบคอหลอดแก้วทั้งหมด มือไม่สัมผัสจุดหัก และเศษแก้วอยู่ในอุปกรณ์ ไม่กระเด็น การใช้งานง่าย ไม่ต้องฝึก ไม่เปลี่ยนพฤติกรรมการหักที่คุ้นชิน จึงเหมาะกับงานที่เร่งด่วน สามารถใช้ซ้ำได้ ล้างทำความสะอาดนำกลับมาใช้ใหม่",
+          keywords: ["หักง่าย", "ปลอดภัย", "มือไม่สัมผัสจุดหัก", "เศษแก้วไม่กระเด็น", "ใช้ซ้ำได้"],
+          durationSec: 30,
+          notes: "เน้นย้ำ 3 จุดเด่น: ความปลอดภัย ใช้งานง่าย ใช้ซ้ำได้"
+        },
+        {
+          id: 6,
+          slideNumber: 6,
+          title: "สไลด์ 6: 4 ขั้นตอนการใช้งานง่ายๆ",
+          script: "การใช้งานมีแค่ 4 ขั้นตอนง่ายๆ ใช้เวลาไม่ถึง 5 วินาที เลือก ขนาดให้ตรงกับหลอดยา สวม ครอบคอหลอด หัก คอหลอดเปิดออกทันทีโดยเศษแก้วยังอยู่ในอุปกรณ์ และ ทิ้ง บีบปล่อยเศษแก้วลงกล่องของมีคมได้เลย ไม่ต้องใช้มือหยิบ ล้างทำความสะอาด แล้วใช้ซ้ำได้ทันที",
+          keywords: ["4 ขั้นตอน", "ไม่ถึง 5 วินาที", "เลือก", "สวม", "หัก", "ทิ้ง"],
+          durationSec: 25,
+          notes: "พูดจังหวะ 4 คำสำคัญ: เลือก-สวม-หัก-ทิ้ง ให้กระชับจำง่าย"
+        },
+        {
+          id: 7,
+          slideNumber: 7,
+          title: "สไลด์ 7: ผลการทดสอบใช้งานจริง",
+          script: "เราได้นำ Snapchill ให้กลุ่มตัวแทนพยาบาลรามาธิบดีทดลองใช้จริงและมีการประเมินผลพบว่า 100% ยืนยันว่าไม่เกิดการบาดเจ็บ หักแอมป์ได้จริง วัสดุคงทน ถนัดอยู่ที่ 98% 86% ในด้านความสะดวกเมื่อใช้ต่อเนื่อง ซึ่งต้องมีการพัฒนาต่อ",
+          keywords: ["ทดลองใช้จริง", "100% ไม่เกิดการบาดเจ็บ", "ถนัด 98%", "ความสะดวก 86%"],
+          durationSec: 25,
+          notes: "แสดงถึง Validation จริงจากผู้ใช้ในโรงพยาบาล"
+        },
+        {
+          id: 8,
+          slideNumber: 8,
+          title: "สไลด์ 8: การเปรียบเทียบกับคู่แข่งในตลาด",
+          script: "ในตลาดที่เราทำการสำรวจมีอุปกรณ์ช่วยหักหลอดแก้ว ราคาตั้งแต่ 36 ถึง 176 บาท เราได้นำมาทดลองเปรียบเทียบการใช้จริงพบว่าคุณสมบัติยังไม่ครอบคลุมตามความต้องการของผู้ใช้งาน ทำไมต้อง SnapChill เพราะมองเห็นหลอดแก้วขณะใช้งาน วัสดุยืดหยุ่นไม่เสียรูป จัดการเศษแก้วตกค้างได้ง่าย ทิ้งได้ปลอดภัย และมีความยืดหยุ่นกับหลอดหลายขนาด SnapChill เป็นเจ้าเดียวที่อยู่ในโซน คุณภาพสูง ราคาเข้าถึงได้",
+          keywords: ["36 ถึง 176 บาท", "มองเห็นหลอดแก้ว", "วัสดุยืดหยุ่น", "คุณภาพสูง ราคาเข้าถึงได้"],
+          durationSec: 30,
+          notes: "ชี้ให้เห็น Competitive Advantage ที่แตกต่างจากคู่แข่ง"
+        },
+        {
+          id: 9,
+          slideNumber: 9,
+          title: "สไลด์ 9: ขนาดตลาด TAM / SAM / SOM",
+          script: "ตลาดรวมกว่า 4 แสน (418,261) คน คือบุคลากรวิชาชีพที่ต้องหักหลอดแก้วยาในงานจริง ตลาดที่เข้าถึงได้จริงกว่า 2 แสน (215,835) คน คือกลุ่มที่หักแอมป์เป็นงานประจำและเข้าถึงได้ผ่านช่องทางโรงพยาบาล และเป้าหมายของเราในปีที่ 5 คือ 15% ของตลาดที่เข้าถึงได้ โดยเริ่มจากโรงพยาบาลขนาดใหญ่",
+          keywords: ["ตลาดรวม 4 แสนคน", "ตลาดเข้าถึงได้ 2 แสนคน", "ปีที่ 5 คือ 15%"],
+          durationSec: 25,
+          notes: "แสดงตัวเลข Market Size ให้ชัดเจนและน่าเชื่อถือ"
+        },
+        {
+          id: 10,
+          slideNumber: 10,
+          title: "สไลด์ 10: โมเดลธุรกิจ (Business Model)",
+          script: "เราวางแผนสร้างรายได้ 3 ช่องทางด้วยกัน คือ ขายให้ระดับองค์กร เช่น โรงพยาบาลรัฐและเอกชน คณะพยาบาลศาสตร์ และบริษัทยา จัดซื้อเป็นสวัสดิการความปลอดภัยของบุคลากร ขายตรงถึงผู้ใช้ ผ่านช่องทางออนไลน์และบูธงานประชุมวิชาการต่างๆ และ การอนุญาตให้ใช้สิทธิ์ ถ่ายทอดเทคโนโลยีให้ผู้ผลิต ขยายกำลังการผลิตโดยไม่ต้องลงทุนโรงงานเอง",
+          keywords: ["3 ช่องทางรายได้", "ระดับองค์กร B2B", "ขายตรง B2C", "อนุญาตให้ใช้สิทธิ์ Licensing"],
+          durationSec: 30,
+          notes: "แจกแจง 3 โมเดลรายได้: B2B, B2C และ Licensing"
+        },
+        {
+          id: 11,
+          slideNumber: 11,
+          title: "สไลด์ 11: ราคาและประมาณการรายได้ 5 ปี",
+          script: "ราคาขาย Snapchill 100 บาทต่อชุด อายุการใช้งาน 1 ปี รายได้เติบโตจากกว่า 2 แสน (259,000) บาทในปีแรก เป็นเกือบ 4 ล้าน (3.89) ล้านบาทในปีที่ 5 รวม 5 ปี ซึ่งคิดเป็น 73% ของรายได้ทั้งหมด เพราะอุปกรณ์มีรอบเปลี่ยนทุกปี ธุรกิจนี้จึงไม่ใช่การขายครั้งเดียวจบ แต่เป็นรายได้ต่อเนื่อง",
+          keywords: ["100 บาทต่อชุด", "อายุ 1 ปี", "2 แสน สู่ 3.89 ล้านบาท", "รายได้ต่อเนื่อง Recurring"],
+          durationSec: 30,
+          notes: "เน้นย้ำว่าเป็น Recurring Revenue มีการซื้อซ้ำทุกปี"
+        },
+        {
+          id: 12,
+          slideNumber: 12,
+          title: "สไลด์ 12: สถานะต้นแบบและความต้องการทุน",
+          script: "เรามีการพัฒนาต้นแบบมาแล้ว 4 version และต้องการทุนสำหรับพัฒนาวัสดุซิลิโคนให้ตอบสนองความต้องการของผู้ใช้งานมากที่สุดเพื่อออกสู่เชิงพานิชย์อย่างเต็มรูปแบบ",
+          keywords: ["ต้นแบบ 4 version", "ต้องการทุนพัฒนาซิลิโคน", "เชิงพาณิชย์"],
+          durationSec: 20,
+          notes: "บอก Progress การพัฒนา และวัตถุประสงค์ในการระดมทุน"
+        },
+        {
+          id: 13,
+          slideNumber: 13,
+          title: "สไลด์ 13: สิ่งที่มองหาและพันธมิตร",
+          script: "สิ่งที่เราต้องการเพื่อไปต่อในนวัตกรรมชิ้นนี้ คือ พันธมิตรด้านการผลิต พันธมิตรด้านการจัดจำหน่ายและอนุญาตให้ใช้สิทธิ์ เพื่อกระจายให้ถึงมือบุคลากรทั่วประเทศให้ทุกคนมีอาวุธป้องกันที่ดีสำหรับสร้างประสบการณ์ที่ดีในการทำงาน",
+          keywords: ["พันธมิตรด้านการผลิต", "พันธมิตรด้านจัดจำหน่าย", "อาวุธป้องกัน"],
+          durationSec: 20,
+          notes: "Call to Action ข้อเสนอร่วมมือสำหรับนักลงทุนและพาร์ทเนอร์"
+        },
+        {
+          id: 14,
+          slideNumber: 14,
+          title: "สไลด์ 14: บทสรุปและคำคมปิดท้าย",
+          script: "ทุกวันนี้ยังมีคนกำลังจะหักแอมป์ยาหลอดแรกในชีวิต เพราะแอมป์ยาหลอดแรก... ไม่ควรสร้างบาดแผลให้ใคร ขอบคุณค่ะ",
+          keywords: ["แอมป์ยาหลอดแรก", "ไม่ควรสร้างบาดแผลให้ใคร", "ขอบคุณค่ะ"],
+          durationSec: 15,
+          notes: "จบด้วยประโยคคมคายตอกย้ำ Impact สลักใจคนฟัง"
+        }
+      ]
+    };
+
+    function pcmToWavBlob(pcm16Data, sampleRate = 24000) {
+      const buffer = new ArrayBuffer(44 + pcm16Data.length * 2);
+      const view = new DataView(buffer);
+
+      function writeString(offset, string) {
+        for (let i = 0; i < string.length; i++) {
+          view.setUint8(offset + i, string.charCodeAt(i));
+        }
+      }
+
+      writeString(0, 'RIFF');
+      view.setUint32(4, 36 + pcm16Data.length * 2, true);
+      writeString(8, 'WAVE');
+      writeString(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeString(36, 'data');
+      view.setUint32(40, pcm16Data.length * 2, true);
+
+      let offset = 44;
+      for (let i = 0; i < pcm16Data.length; i++, offset += 2) {
+        view.setInt16(offset, pcm16Data[i], true);
+      }
+
+      return new Blob([buffer], { type: 'audio/wav' });
+    }
+
+    function base64ToArrayBuffer(base64) {
+      const binaryString = window.atob(base64);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      return bytes.buffer;
+    }
+
+    async function fetchGeminiTTS(text, voiceName = "Kore", apiKey) {
+      if (!apiKey) return null;
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+
+      const payload = {
+        contents: [{
+          parts: [{ text: `Say clearly in natural pitch accent: ${text}` }]
+        }],
+        generationConfig: {
+          responseModalities: ["AUDIO"],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: voiceName }
+            }
+          }
+        }
+      };
+
+      let retries = 0;
+      while (retries < 3) {
+        try {
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
+
+          const result = await response.json();
+          const part = result?.candidates?.[0]?.content?.parts?.[0];
+          const audioData = part?.inlineData?.data;
+          const mimeType = part?.inlineData?.mimeType || "audio/L16;rate=24000";
+
+          if (audioData) {
+            let sampleRate = 24000;
+            const rateMatch = mimeType.match(/rate=(\d+)/);
+            if (rateMatch && rateMatch[1]) {
+              sampleRate = parseInt(rateMatch[1], 10);
+            }
+            const buffer = base64ToArrayBuffer(audioData);
+            const pcm16 = new Int16Array(buffer);
+            const wavBlob = pcmToWavBlob(pcm16, sampleRate);
+            return URL.createObjectURL(wavBlob);
+          }
+        } catch (err) {
+          retries++;
+          await new Promise(res => setTimeout(res, 1000 * Math.pow(2, retries)));
+        }
+      }
+      return null;
+    }
+
+    async function evaluatePitchSpeechWithGemini(expectedScript, spokenText, keywords = [], apiKey) {
+      if (!apiKey) throw new Error("Missing API Key");
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+      const systemPrompt = "คุณคือโค้ชสอนการสปีชและ Pitching มืออาชีพ ทำหน้าที่ประเมินการพูดของผู้ใช้งาน เปรียบเทียบกับสคริปต์ที่เตรียมไว้ ให้คำแนะนำและคะแนนอย่างเป็นมิตร";
+      const userPrompt = `
+      สคริปต์ที่เตรียมไว้ (Expected Script):
+      "${expectedScript}"
+
+      คำสำคัญที่ควรมี (Keywords):
+      ${keywords.join(", ")}
+
+      ข้อความที่ผู้ใช้พูดจริง (Spoken Text):
+      "${spokenText}"
+
+      กรุณาวิเคราะห์และตอบกลับในรูปแบบ JSON ดังนี้:
+      {
+        "accuracyScore": 85, (0-100 คะแนนความตรงตามเนื้อหา)
+        "clarityScore": 90, (0-100 คะแนนความชัดเจนและการจับประเด็น)
+        "missingKeywords": ["คำที่ตกหล่น"],
+        "strengthPoints": ["จุดเด่นของการพูดครั้งนี้"],
+        "improvementTips": ["ข้อควรปรับปรุงหรือเทคนิคการจำ"],
+        "coachingSummary": "สรุปคำแนะนำสั้นๆ 2-3 ประโยคเพื่อสร้างกำลังใจ"
+      }
+      `;
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: userPrompt }] }],
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            generationConfig: { responseMimeType: "application/json" }
+          })
+        });
+        if (!response.ok) throw new Error("API call failed");
+        const resJson = await response.json();
+        const jsonText = resJson.candidates[0].content.parts[0].text;
+        return JSON.parse(jsonText);
+      } catch (e) {
+        return {
+          accuracyScore: 75,
+          clarityScore: 80,
+          missingKeywords: keywords.filter(k => !spokenText.includes(k)),
+          strengthPoints: ["สามารถพูดครอบคลุมใจความสำคัญได้ดี"],
+          improvementTips: ["ลองเน้นคำสำคัญให้ชัดเจนยิ่งขึ้น และควบคุมจังหวะหายใจ", "ตรวจสอบ API Key อีกครั้งหากพบปัญหาขัดข้อง"],
+          coachingSummary: "ทำได้ดีมากครับ! เนื้อหาโดยรวมสื่อสารได้เข้าใจ ลองซ้อมบ่อยๆ เพื่อให้เป็นธรรมชาติยิ่งขึ้น"
+        };
+      }
+    }
+
+    async function convertRawTextToSlidesWithGemini(rawContent, apiKey) {
+      if (!apiKey) throw new Error("Missing API Key");
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+      const systemPrompt = "คุณคือผู้เชี่ยวชาญการเขียนสคริปต์ Pitching เปลี่ยนข้อความดิบให้เป็นโครงสร้างสไลด์ Pitching ที่น่าสนใจ";
+      const userPrompt = `
+      เปลี่ยนเนื้อหาด้านล่างนี้ให้เป็นสคริปต์ Pitching แบ่งตามสไลด์ โดยมีโครงสร้าง JSON ต่อไปนี้:
+      {
+        "title": "ชื่อหัวข้อการ Pitching",
+        "description": "คำอธิบายสรุปสั้นๆ",
+        "slides": [
+          {
+            "slideNumber": 1,
+            "title": "ชื่อสไลด์",
+            "script": "เนื้อหาสคริปต์พูด",
+            "keywords": ["คำสำคัญ1", "คำสำคัญ2"],
+            "durationSec": 25,
+            "notes": "คำแนะนำการพูด"
+          }
+        ]
+      }
+
+      เนื้อหาดิบ:
+      "${rawContent}"
+      `;
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: userPrompt }] }],
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            generationConfig: { responseMimeType: "application/json" }
+          })
+        });
+        if (!response.ok) throw new Error("API call failed");
+        const resJson = await response.json();
+        const jsonText = resJson.candidates[0].content.parts[0].text;
+        return JSON.parse(jsonText);
+      } catch (e) {
+        alert("ไม่สามารถสร้างสคริปต์ด้วย AI ได้ในขณะนี้ โปรดตรวจสอบ API Key และลองอีกครั้ง");
+        return null;
+      }
+    }
+
+    function App() {
+      // API Key State
+      const [apiKey, setApiKey] = useState(() => localStorage.getItem('pitchmaster_api_key') || '');
+      const [showApiModal, setShowApiModal] = useState(!localStorage.getItem('pitchmaster_api_key'));
+      const [tempKeyInput, setTempKeyInput] = useState('');
+
+      // Script State Management
+      const [scriptsList, setScriptsList] = useState(() => {
+        const saved = localStorage.getItem('pitchmaster_scripts');
+        return saved ? JSON.parse(saved) : [DEFAULT_SNAPCHILL_SCRIPT];
+      });
+      const [activeScriptId, setActiveScriptId] = useState(() => {
+        return scriptsList[0]?.id || "snapchill-demo";
+      });
+
+      const currentScript = useMemo(() => {
+        return scriptsList.find(s => s.id === activeScriptId) || scriptsList[0];
+      }, [scriptsList, activeScriptId]);
+
+      // Navigation & Practice States
+      const [activeTab, setActiveTab] = useState('practice'); // 'practice', 'teleprompter', 'editor', 'analytics'
+      const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+
+      // Slide Practice States
+      const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+      const [audioLoading, setAudioLoading] = useState(false);
+      const [selectedVoice, setSelectedVoice] = useState('Kore'); // Gemini Kore, Zephyr, Puck
+      const [playbackRate, setPlaybackRate] = useState(1);
+      
+      // Memory Blur Mode
+      const [memoryMode, setMemoryMode] = useState(0);
+
+      // Speech Recording States
+      const [isRecording, setIsRecording] = useState(false);
+      const [transcript, setTranscript] = useState('');
+      const [recordingTime, setRecordingTime] = useState(0);
+      const [aiEvaluating, setAiEvaluating] = useState(false);
+      const [evaluationResult, setEvaluationResult] = useState(null);
+
+      // Audio Elements & Speech Recognition Refs
+      const audioRef = useRef(null);
+      const recognitionRef = useRef(null);
+      const timerIntervalRef = useRef(null);
+
+      // Re-render Lucide icons when state/tabs change
+      useEffect(() => {
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      });
+
+      // LocalStorage Persistence
+      useEffect(() => {
+        localStorage.setItem('pitchmaster_scripts', JSON.stringify(scriptsList));
+      }, [scriptsList]);
+
+      // Setup Speech Recognition
+      useEffect(() => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+          const rec = new SpeechRecognition();
+          rec.continuous = true;
+          rec.interimResults = true;
+          rec.lang = 'th-TH';
+
+          rec.onresult = (event) => {
+            let interimTranscript = '';
+            let finalTrans = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+              if (event.results[i].isFinal) {
+                finalTrans += event.results[i][0].transcript;
+              } else {
+                interimTranscript += event.results[i][0].transcript;
+              }
+            }
+            setTranscript(prev => finalTrans ? prev + ' ' + finalTrans : prev || interimTranscript);
+          };
+
+          rec.onend = () => {
+            if (isRecording) {
+              try { rec.start(); } catch(e) {}
+            }
+          };
+
+          recognitionRef.current = rec;
+        }
+      }, [isRecording]);
+
+      const handleSaveApiKey = () => {
+        if(tempKeyInput.trim().length > 10) {
+          localStorage.setItem('pitchmaster_api_key', tempKeyInput.trim());
+          setApiKey(tempKeyInput.trim());
+          setShowApiModal(false);
+        } else {
+          alert('กรุณากรอก API Key ที่ถูกต้อง');
+        }
+      };
+
+      const handleClearApiKey = () => {
+        localStorage.removeItem('pitchmaster_api_key');
+        setApiKey('');
+        setShowApiModal(true);
+      };
+
+      const currentSlide = currentScript?.slides[currentSlideIndex] || currentScript?.slides[0];
+
+      useEffect(() => {
+        stopAudio();
+        stopRecording();
+        setTranscript('');
+        setEvaluationResult(null);
+        setRecordingTime(0);
+      }, [currentSlideIndex, activeScriptId]);
+
+      const handlePlayAudio = async () => {
+        if (isPlayingAudio) {
+          stopAudio();
+          return;
+        }
+
+        if (!apiKey) {
+          alert('กรุณาตั้งค่า Gemini API Key ก่อนใช้งาน AI Voice');
+          setShowApiModal(true);
+          return;
+        }
+
+        setAudioLoading(true);
+        try {
+          const audioUrl = await fetchGeminiTTS(currentSlide.script, selectedVoice, apiKey);
+          if (audioUrl) {
+            if (audioRef.current) {
+              audioRef.current.pause();
+            }
+            const audio = new Audio(audioUrl);
+            audio.playbackRate = playbackRate;
+            audioRef.current = audio;
+            audio.onended = () => setIsPlayingAudio(false);
+            audio.play();
+            setIsPlayingAudio(true);
+          } else {
+            // Fallback
+            if ('speechSynthesis' in window) {
+              window.speechSynthesis.cancel();
+              const utterance = new SpeechSynthesisUtterance(currentSlide.script);
+              utterance.lang = 'th-TH';
+              utterance.rate = playbackRate;
+              utterance.onend = () => setIsPlayingAudio(false);
+              window.speechSynthesis.speak(utterance);
+              setIsPlayingAudio(true);
+            } else {
+              alert("ระบบของคุณไม่รองรับการเล่นเสียง");
+            }
+          }
+        } catch (err) {
+          console.error("Audio Playback Error:", err);
+        } finally {
+          setAudioLoading(false);
+        }
+      };
+
+      const stopAudio = () => {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current = null;
+        }
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
+        setIsPlayingAudio(false);
+      };
+
+      const startRecording = () => {
+        stopAudio();
+        setTranscript('');
+        setEvaluationResult(null);
+        setRecordingTime(0);
+        setIsRecording(true);
+
+        if (recognitionRef.current) {
+          try {
+            recognitionRef.current.start();
+          } catch (e) {}
+        } else {
+            alert('เบราว์เซอร์ของคุณไม่รองรับการบันทึกเสียง (แนะนำใช้ Chrome หรือ Edge)');
+            setIsRecording(false);
+            return;
+        }
+
+        timerIntervalRef.current = setInterval(() => {
+          setRecordingTime(prev => prev + 1);
+        }, 1000);
+      };
+
+      const stopRecording = () => {
+        setIsRecording(false);
+        if (recognitionRef.current) {
+          try {
+            recognitionRef.current.stop();
+          } catch (e) {}
+        }
+        if (timerIntervalRef.current) {
+          clearInterval(timerIntervalRef.current);
+        }
+      };
+
+      const handleAnalyzeSpeech = async () => {
+        stopRecording();
+        if (!transcript.trim()) {
+          alert("ไม่พบข้อความที่อัดเสียง กรุณาพูดใส่ไมค์ก่อนทำการวิเคราะห์");
+          return;
+        }
+        
+        if (!apiKey) {
+          alert('กรุณาตั้งค่า Gemini API Key ก่อนให้ AI ประเมินการพูด');
+          setShowApiModal(true);
+          return;
+        }
+
+        setAiEvaluating(true);
+        const res = await evaluatePitchSpeechWithGemini(currentSlide.script, transcript, currentSlide.keywords || [], apiKey);
+        setEvaluationResult(res);
+        setAiEvaluating(false);
+
+        setScriptsList(prevScripts => {
+          return prevScripts.map(sc => {
+            if (sc.id !== currentScript.id) return sc;
+            const updatedSlides = sc.slides.map(sl => {
+              if (sl.id !== currentSlide.id) return sl;
+              return {
+                ...sl,
+                bestScore: Math.max(sl.bestScore || 0, res.accuracyScore),
+                practicedCount: (sl.practicedCount || 0) + 1
+              };
+            });
+            return { ...sc, slides: updatedSlides };
+          });
+        });
+      };
+
+      const renderScriptWithMemoryMode = (text, keywords = []) => {
+        if (memoryMode === 0) return <span>{text}</span>;
+
+        if (memoryMode === 1) { 
+          let parts = [text];
+          keywords.forEach(kw => {
+            parts = parts.flatMap(part => {
+              if (typeof part !== 'string') return [part];
+              const subParts = part.split(kw);
+              const result = [];
+              subParts.forEach((sp, idx) => {
+                if (idx > 0) {
+                  result.push(<mark key={kw + idx} class="bg-teal-500/30 text-teal-200 px-1.5 py-0.5 rounded font-medium border border-teal-500/40">{kw}</mark>);
+                }
+                result.push(sp);
+              });
+              return result;
+            });
+          });
+          return <span>{parts}</span>;
+        }
+
+        if (memoryMode === 2) { 
+          const words = text.split(' ');
+          return (
+            <span>
+              {words.map((w, idx) => (
+                idx % 2 === 1 ? (
+                  <span key={idx} class="blur-sm bg-slate-800 text-transparent select-none mx-0.5 px-1 rounded transition-all hover:blur-none hover:text-slate-300 hover:bg-slate-700">{w} </span>
+                ) : (
+                  <span key={idx}>{w} </span>
+                )
+              ))}
+            </span>
+          );
+        }
+
+        if (memoryMode === 3) { 
+          return (
+            <div class="text-center py-8">
+              <span class="inline-block bg-slate-800 text-slate-400 px-4 py-2 rounded-full border border-slate-700 text-sm">
+                🔒 ซ่อนสคริปต์ทั้งหมด (ลองพูดจากความทรงจำของคุณ!)
+              </span>
+              <p class="text-xs text-slate-500 mt-2">คำสำคัญบอกใบ้: {keywords.join(" • ")}</p>
+            </div>
+          );
+        }
+      };
+
+      return (
+        <div class="flex flex-col min-h-screen bg-slate-950 text-slate-100">
+          
+          {/* API Key Modal */}
+          {showApiModal && (
+            <div class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+              <div class="bg-slate-900 border border-teal-500/50 p-6 rounded-2xl shadow-2xl max-w-md w-full">
+                <div class="flex items-center gap-3 mb-4">
+                  <div class="w-10 h-10 rounded-full bg-teal-500/20 flex items-center justify-center text-teal-400">
+                    <i data-lucide="key" class="w-5 h-5"></i>
+                  </div>
+                  <h2 class="text-lg font-bold text-white">ตั้งค่า Gemini API Key</h2>
+                </div>
+                <p class="text-sm text-slate-300 mb-4 leading-relaxed">
+                  แอปนี้ต้องการใช้ <strong>Google Gemini API</strong> เพื่อสร้างเสียงพูด (TTS) และการให้ AI ประเมินการ Pitching ของคุณ ข้อมูลคีย์จะถูกเก็บไว้ในเครื่องของคุณเท่านั้น (Local Storage)
+                </p>
+                <div class="mb-5">
+                  <label class="text-xs text-slate-400 block mb-1">กรอก API Key ของคุณ:</label>
+                  <input 
+                    type="password" 
+                    value={tempKeyInput}
+                    onChange={(e) => setTempKeyInput(e.target.value)}
+                    placeholder="AIzaSy..." 
+                    class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 text-slate-200"
+                  />
+                  <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" class="text-xs text-teal-400 hover:underline mt-2 inline-block">
+                    รับ API Key ฟรีที่ Google AI Studio ↗
+                  </a>
+                </div>
+                <div class="flex gap-3 justify-end">
+                  {apiKey && (
+                    <button onClick={() => setShowApiModal(false)} class="px-4 py-2 text-sm text-slate-400 hover:text-white">ยกเลิก</button>
+                  )}
+                  <button onClick={handleSaveApiKey} class="bg-teal-600 hover:bg-teal-500 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors">
+                    บันทึกและเริ่มต้นใช้งาน
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Header */}
+          <header class="bg-slate-900/80 border-b border-slate-800 backdrop-blur-md sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+              
+              <div class="flex items-center space-x-3 sm:space-x-4">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-teal-500/20">
+                  <i data-lucide="mic" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <h1 class="text-lg font-bold text-white leading-none tracking-tight flex items-center gap-2">
+                    PitchMaster <span class="bg-teal-500/20 text-teal-400 text-xs px-2 py-0.5 rounded-full border border-teal-500/30">AI Practice</span>
+                  </h1>
+                  <p class="text-xs text-slate-400 hidden sm:block">แอปฝึกพูดและซ้อม Pitching ด้วย AI</p>
+                </div>
+
+                <div class="ml-4 pl-4 border-l border-slate-800">
+                  <select 
+                    value={activeScriptId} 
+                    onChange={(e) => {
+                      setActiveScriptId(e.target.value);
+                      setCurrentSlideIndex(0);
+                    }}
+                    class="bg-slate-800 text-xs sm:text-sm text-teal-300 font-medium px-3 py-1.5 rounded-lg border border-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 max-w-[140px] sm:max-w-[240px] truncate"
+                  >
+                    {scriptsList.map(sc => (
+                      <option key={sc.id} value={sc.id}>{sc.title}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <nav class="hidden md:flex items-center space-x-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+                <button
+                  onClick={() => setActiveTab('practice')}
+                  class={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                    activeTab === 'practice' ? 'bg-teal-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <i data-lucide="sparkles" class="w-4 h-4"></i> ซ้อมทีละสไลด์
+                </button>
+                <button
+                  onClick={() => setActiveTab('teleprompter')}
+                  class={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                    activeTab === 'teleprompter' ? 'bg-teal-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <i data-lucide="play-circle" class="w-4 h-4"></i> Teleprompter
+                </button>
+                <button
+                  onClick={() => setActiveTab('editor')}
+                  class={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                    activeTab === 'editor' ? 'bg-teal-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <i data-lucide="edit-3" class="w-4 h-4"></i> จัดการสคริปต์
+                </button>
+                <button
+                  onClick={() => setActiveTab('analytics')}
+                  class={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                    activeTab === 'analytics' ? 'bg-teal-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <i data-lucide="bar-chart-2" class="w-4 h-4"></i> สถิติ
+                </button>
+              </nav>
+
+              <div class="flex items-center gap-2">
+                <button
+                  onClick={() => setShowApiModal(true)}
+                  class="text-slate-400 hover:text-teal-400 p-2 rounded-lg transition-colors"
+                  title="ตั้งค่า API Key"
+                >
+                  <i data-lucide="settings" class="w-4 h-4"></i>
+                </button>
+                <button
+                  onClick={() => setActiveTab('editor')}
+                  class="hidden md:flex bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white text-xs px-3 py-2 rounded-lg font-medium items-center gap-1 shadow-lg shadow-teal-500/10 transition-all"
+                >
+                  <i data-lucide="plus" class="w-4 h-4"></i> เพิ่มสคริปต์ใหม่
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <div class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 z-50 px-2 py-2 flex justify-around">
+            <button
+              onClick={() => setActiveTab('practice')}
+              class={`flex flex-col items-center text-[10px] ${activeTab === 'practice' ? 'text-teal-400' : 'text-slate-400'}`}
+            >
+              <i data-lucide="sparkles" class="w-5 h-5 mb-0.5"></i> ทีละสไลด์
+            </button>
+            <button
+              onClick={() => setActiveTab('teleprompter')}
+              class={`flex flex-col items-center text-[10px] ${activeTab === 'teleprompter' ? 'text-teal-400' : 'text-slate-400'}`}
+            >
+              <i data-lucide="play-circle" class="w-5 h-5 mb-0.5"></i> Teleprompter
+            </button>
+            <button
+              onClick={() => setActiveTab('editor')}
+              class={`flex flex-col items-center text-[10px] ${activeTab === 'editor' ? 'text-teal-400' : 'text-slate-400'}`}
+            >
+              <i data-lucide="edit-3" class="w-5 h-5 mb-0.5"></i> จัดการสคริปต์
+            </button>
+            <button
+              onClick={() => setActiveTab('analytics')}
+              class={`flex flex-col items-center text-[10px] ${activeTab === 'analytics' ? 'text-teal-400' : 'text-slate-400'}`}
+            >
+              <i data-lucide="bar-chart-2" class="w-5 h-5 mb-0.5"></i> สถิติ
+            </button>
+          </div>
+
+          <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 pb-20 md:pb-8">
+
+            {activeTab === 'practice' && (
+              <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <div class="lg:col-span-4 bg-slate-900/60 rounded-2xl p-4 border border-slate-800/80 flex flex-col max-h-[600px]">
+                  <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <h2 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                      <i data-lucide="layers" class="w-4 h-4 text-teal-400"></i> ลำดับสไลด์ทั้งหมด ({currentScript.slides.length})
+                    </h2>
+                    <span class="text-xs text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded-full font-mono">
+                      {Math.round(((currentSlideIndex + 1) / currentScript.slides.length) * 100)}%
+                    </span>
+                  </div>
+
+                  <div class="overflow-y-auto custom-scrollbar space-y-2 mt-3 pr-1 flex-grow">
+                    {currentScript.slides.map((slide, idx) => {
+                      const isCurrent = idx === currentSlideIndex;
+                      return (
+                        <button
+                          key={slide.id}
+                          onClick={() => setCurrentSlideIndex(idx)}
+                          class={`w-full text-left p-3 rounded-xl transition-all border flex items-start gap-3 ${
+                            isCurrent
+                              ? 'bg-gradient-to-r from-teal-900/50 to-slate-800 border-teal-500/60 text-white shadow-md'
+                              : 'bg-slate-800/40 border-slate-800 hover:bg-slate-800/80 text-slate-300'
+                          }`}
+                        >
+                          <div class={`w-7 h-7 rounded-lg text-xs font-bold flex items-center justify-center shrink-0 ${
+                            isCurrent ? 'bg-teal-500 text-slate-950' : 'bg-slate-700 text-slate-400'
+                          }`}>
+                            {slide.slideNumber}
+                          </div>
+                          <div class="flex-grow min-w-0">
+                            <h3 class="text-xs font-medium truncate">{slide.title}</h3>
+                            <p class="text-[11px] text-slate-400 line-clamp-1 mt-0.5">{slide.script}</p>
+                            {slide.bestScore && (
+                              <div class="mt-1 flex items-center gap-2">
+                                <span class="text-[10px] text-emerald-400 font-mono">คะแนนดีสุด: {slide.bestScore}%</span>
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div class="lg:col-span-8 flex flex-col space-y-6">
+                  
+                  <div class="bg-slate-900/80 rounded-2xl p-6 border border-slate-800 shadow-xl relative overflow-hidden">
+                    
+                    <div class="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-slate-800">
+                      <div class="flex items-center space-x-2">
+                        <span class="bg-teal-500/20 text-teal-300 text-xs px-2.5 py-1 rounded-lg border border-teal-500/30 font-medium">
+                          สไลด์ที่ {currentSlide.slideNumber} / {currentScript.slides.length}
+                        </span>
+                        <h2 class="text-base font-semibold text-white">{currentSlide.title}</h2>
+                      </div>
+
+                      <div class="flex items-center space-x-1 bg-slate-800/80 p-1 rounded-lg border border-slate-700">
+                        <span class="text-[11px] text-slate-400 px-2 font-medium">ฝึกความจำ:</span>
+                        <button
+                          onClick={() => setMemoryMode(0)}
+                          class={`px-2 py-0.5 text-xs rounded ${memoryMode === 0 ? 'bg-teal-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                        >
+                          ปกติ
+                        </button>
+                        <button
+                          onClick={() => setMemoryMode(1)}
+                          class={`px-2 py-0.5 text-xs rounded ${memoryMode === 1 ? 'bg-teal-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                        >
+                          เน้นคำสำคัญ
+                        </button>
+                        <button
+                          onClick={() => setMemoryMode(2)}
+                          class={`px-2 py-0.5 text-xs rounded ${memoryMode === 2 ? 'bg-teal-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                        >
+                          เบลอคำ
+                        </button>
+                        <button
+                          onClick={() => setMemoryMode(3)}
+                          class={`px-2 py-0.5 text-xs rounded ${memoryMode === 3 ? 'bg-teal-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                        >
+                          ซ่อนหมด
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="my-6 min-h-[140px] text-lg sm:text-xl leading-relaxed font-normal text-slate-100 bg-slate-950/50 p-5 rounded-xl border border-slate-800/60">
+                      {renderScriptWithMemoryMode(currentSlide.script, currentSlide.keywords)}
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-3 text-xs bg-slate-800/30 p-3 rounded-xl border border-slate-800">
+                      <div class="flex items-center space-x-2">
+                        <span class="text-slate-400 font-medium">คำสำคัญ:</span>
+                        <div class="flex flex-wrap gap-1">
+                          {currentSlide.keywords?.map((kw, i) => (
+                            <span key={i} class="bg-slate-800 text-teal-300 px-2 py-0.5 rounded border border-slate-700">
+                              #{kw}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      {currentSlide.notes && (
+                        <div class="text-amber-300/80 italic flex items-center gap-1">
+                          <i data-lucide="info" class="w-3.5 h-3.5"></i> {currentSlide.notes}
+                        </div>
+                      )}
+                    </div>
+
+                    <div class="mt-6 pt-6 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      
+                      <div class="bg-slate-950/80 p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-3">
+                          <span class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                            <i data-lucide="volume-2" class="w-4 h-4 text-teal-400"></i> ฟังตัวอย่างการออกเสียง (TTS)
+                          </span>
+
+                          <select 
+                            value={selectedVoice} 
+                            onChange={(e) => setSelectedVoice(e.target.value)}
+                            class="bg-slate-800 text-[11px] text-slate-300 px-2 py-1 rounded border border-slate-700"
+                          >
+                            <option value="Kore">เสียง Kore (แจ่มชัด)</option>
+                            <option value="Zephyr">เสียง Zephyr (นุ่มนวล)</option>
+                            <option value="Puck">เสียง Puck (กระฉับกระเฉง)</option>
+                            <option value="Fenrir">เสียง Fenrir (จริงจัง)</option>
+                          </select>
+                        </div>
+
+                        <div class="flex items-center space-x-3">
+                          <button
+                            onClick={handlePlayAudio}
+                            disabled={audioLoading}
+                            class={`flex-1 py-2.5 px-4 rounded-xl font-medium text-xs flex items-center justify-center gap-2 transition-all shadow-md ${
+                              isPlayingAudio 
+                                ? 'bg-amber-600 hover:bg-amber-700 text-white' 
+                                : 'bg-teal-600 hover:bg-teal-500 text-white'
+                            }`}
+                          >
+                            {audioLoading ? (
+                              <span>กำลังโหลดเสียง...</span>
+                            ) : isPlayingAudio ? (
+                              <><i data-lucide="square" class="w-4 h-4"></i> หยุดฟังเสียง</>
+                            ) : (
+                              <><i data-lucide="play" class="w-4 h-4"></i> ฟัง AI อ่านสคริปต์นี้</>
+                            )}
+                          </button>
+
+                          <button
+                            onClick={() => setPlaybackRate(r => r === 1 ? 1.2 : r === 1.2 ? 0.8 : 1)}
+                            class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-3 py-2.5 rounded-xl border border-slate-700 font-mono"
+                            title="ความเร็วการอ่าน"
+                          >
+                            {playbackRate}x
+                          </button>
+                        </div>
+                      </div>
+
+                      <div class="bg-slate-950/80 p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-3">
+                          <span class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                            <i data-lucide="mic" class="w-4 h-4 text-red-400"></i> ฝึกพูดเสียงของคุณเอง
+                          </span>
+                          {isRecording && (
+                            <span class="text-xs font-mono text-red-400 animate-pulse flex items-center gap-1">
+                              <span class="w-2 h-2 rounded-full bg-red-500"></span> อัดเสียงอยู่ {recordingTime}s
+                            </span>
+                          )}
+                        </div>
+
+                        <div class="flex items-center space-x-2">
+                          {!isRecording ? (
+                            <button
+                              onClick={startRecording}
+                              class="flex-1 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white py-2.5 px-4 rounded-xl font-medium text-xs flex items-center justify-center gap-2 shadow-lg shadow-red-600/20 transition-all"
+                            >
+                              <i data-lucide="mic" class="w-4 h-4"></i> กดเพื่อเริ่มพูดตาม
+                            </button>
+                          ) : (
+                            <button
+                              onClick={stopRecording}
+                              class="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-2.5 px-4 rounded-xl font-medium text-xs flex items-center justify-center gap-2 border border-slate-700"
+                            >
+                              <i data-lucide="square" class="w-4 h-4"></i> หยุดพูด
+                            </button>
+                          )}
+
+                          <button
+                            onClick={handleAnalyzeSpeech}
+                            disabled={!transcript || aiEvaluating}
+                            class="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white px-3 py-2.5 rounded-xl text-xs font-medium flex items-center gap-1 shadow-md shadow-indigo-600/20"
+                            title="ส่งให้ AI ประเมิน"
+                          >
+                            <i data-lucide="sparkles" class="w-4 h-4"></i>
+                            <span class="hidden sm:inline">ประเมิน</span>
+                          </button>
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {transcript && (
+                      <div class="mt-4 p-4 bg-slate-950 rounded-xl border border-teal-500/30">
+                        <div class="flex items-center justify-between text-xs text-teal-400 font-medium mb-1">
+                          <span>🎙️ ข้อความที่ไมโครโฟนจับได้:</span>
+                          <span class="text-slate-500 font-mono">{transcript.length} ตัวอักษร</span>
+                        </div>
+                        <p class="text-sm text-slate-200">{transcript}</p>
+                      </div>
+                    )}
+
+                    {aiEvaluating && (
+                      <div class="mt-4 p-5 bg-indigo-950/60 border border-indigo-500/40 rounded-xl text-center">
+                        <div class="inline-block animate-spin text-indigo-400 mb-2">
+                          <i data-lucide="loader" class="w-6 h-6"></i>
+                        </div>
+                        <p class="text-sm text-indigo-200 font-medium">Gemini AI กำลังวิเคราะห์น้ำเสียง ความถูกต้อง และคำสำคัญของคุณ...</p>
+                      </div>
+                    )}
+
+                    {evaluationResult && !aiEvaluating && (
+                      <div class="mt-4 p-5 bg-gradient-to-br from-slate-900 to-teal-950/80 border border-teal-500/50 rounded-2xl shadow-2xl">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                          <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                            <i data-lucide="award" class="w-5 h-5 text-amber-400"></i> ผลการประเมินจาก Gemini Pitch Coach
+                          </h3>
+                          <div class="flex items-center space-x-3 font-mono">
+                            <div class="text-center">
+                              <span class="text-[10px] text-slate-400 block">เนื้อหาตรง</span>
+                              <span class="text-lg font-bold text-teal-400">{evaluationResult.accuracyScore}%</span>
+                            </div>
+                            <div class="text-center">
+                              <span class="text-[10px] text-slate-400 block">ความชัดเจน</span>
+                              <span class="text-lg font-bold text-indigo-400">{evaluationResult.clarityScore}%</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="space-y-3 text-xs">
+                          <p class="text-slate-300 italic bg-slate-900/80 p-3 rounded-lg border border-slate-800">
+                            "{evaluationResult.coachingSummary}"
+                          </p>
+
+                          {evaluationResult.missingKeywords?.length > 0 && (
+                            <div class="text-rose-300">
+                              <strong class="font-semibold block mb-1">คำสำคัญที่ลืมพูด:</strong>
+                              <div class="flex flex-wrap gap-1">
+                                {evaluationResult.missingKeywords.map((kw, idx) => (
+                                  <span key={idx} class="bg-rose-950 text-rose-300 px-2 py-0.5 rounded border border-rose-800">
+                                    {kw}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {evaluationResult.improvementTips?.length > 0 && (
+                            <div class="text-amber-200">
+                              <strong class="font-semibold block mb-1">💡 เทคนิคแนะนำเพื่อปรับปรุง:</strong>
+                              <ul class="list-disc list-inside space-y-1 text-slate-300">
+                                {evaluationResult.improvementTips.map((tip, idx) => (
+                                  <li key={idx}>{tip}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <div class="mt-6 flex items-center justify-between pt-4 border-t border-slate-800">
+                      <button
+                        onClick={() => setCurrentSlideIndex(i => Math.max(0, i - 1))}
+                        disabled={currentSlideIndex === 0}
+                        class="bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-slate-200 px-4 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all"
+                      >
+                        <i data-lucide="chevron-left" class="w-4 h-4"></i> สไลด์ก่อนหน้า
+                      </button>
+
+                      <span class="text-xs text-slate-400 font-mono">
+                        {currentSlideIndex + 1} / {currentScript.slides.length}
+                      </span>
+
+                      <button
+                        onClick={() => setCurrentSlideIndex(i => Math.min(currentScript.slides.length - 1, i + 1))}
+                        disabled={currentSlideIndex === currentScript.slides.length - 1}
+                        class="bg-teal-600 hover:bg-teal-500 disabled:opacity-30 text-white px-4 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all shadow-md"
+                      >
+                        สไลด์ถัดไป <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                      </button>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {activeTab === 'teleprompter' && (
+              <TeleprompterRunner script={currentScript} />
+            )}
+
+            {activeTab === 'editor' && (
+              <ScriptEditorView 
+                scriptsList={scriptsList}
+                setScriptsList={setScriptsList}
+                activeScriptId={activeScriptId}
+                setActiveScriptId={setActiveScriptId}
+                apiKey={apiKey}
+                setShowApiModal={setShowApiModal}
+              />
+            )}
+
+            {activeTab === 'analytics' && (
+              <AnalyticsView script={currentScript} />
+            )}
+
+          </main>
+
+          {/* Footer */}
+          <footer class="bg-slate-900 border-t border-slate-800 py-4 px-6 text-center text-xs text-slate-500 mt-auto">
+            PitchMaster AI — ขับเคลื่อนด้วย Gemini Flash & TTS API 
+            {apiKey && <button onClick={handleClearApiKey} class="ml-2 text-slate-400 hover:text-red-400 underline">ลบ API Key</button>}
+          </footer>
+        </div>
+      );
+    }
+
+    function TeleprompterRunner({ script }) {
+      const [autoScroll, setAutoScroll] = useState(false);
+      const [scrollSpeed, setScrollSpeed] = useState(2); 
+      const [fontSize, setFontSize] = useState(28); 
+      const [elapsedTime, setElapsedTime] = useState(0);
+      const [activeSlideIdx, setActiveSlideIdx] = useState(0);
+      
+      const prompterRef = useRef(null);
+      const timerRef = useRef(null);
+
+      useEffect(() => {
+        let scrollInterval = null;
+        if (autoScroll) {
+          scrollInterval = setInterval(() => {
+            if (prompterRef.current) {
+              prompterRef.current.scrollTop += scrollSpeed;
+            }
+          }, 50);
+
+          timerRef.current = setInterval(() => {
+            setElapsedTime(t => t + 1);
+          }, 1000);
+        } else {
+          clearInterval(timerRef.current);
+        }
+
+        return () => {
+          clearInterval(scrollInterval);
+          clearInterval(timerRef.current);
+        };
+      }, [autoScroll, scrollSpeed]);
+
+      const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+      };
+
+      return (
+        <div class="max-w-5xl mx-auto space-y-4">
+          
+          <div class="bg-slate-900/90 p-4 rounded-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-4 shadow-xl">
+            <div class="flex items-center space-x-3">
+              <button
+                onClick={() => setAutoScroll(!autoScroll)}
+                class={`px-5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-lg transition-all ${
+                  autoScroll ? 'bg-amber-600 hover:bg-amber-500 text-white' : 'bg-teal-600 hover:bg-teal-500 text-white'
+                }`}
+              >
+                {autoScroll ? <i data-lucide="pause" class="w-4 h-4"></i> : <i data-lucide="play" class="w-4 h-4"></i>}
+                {autoScroll ? 'หยุดเลื่อน' : 'เริ่มซ้อมรวดเดียว (Auto-Scroll)'}
+              </button>
+
+              <div class="flex items-center space-x-2 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
+                <span class="text-slate-400">ความเร็ว:</span>
+                <input 
+                  type="range" 
+                  min="1" 
+                  max="5" 
+                  value={scrollSpeed} 
+                  onChange={(e) => setScrollSpeed(Number(e.target.value))}
+                  class="w-20 accent-teal-500"
+                />
+                <span class="font-mono text-teal-400">{scrollSpeed}x</span>
+              </div>
+
+              <div class="flex items-center space-x-2 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
+                <span class="text-slate-400">ขนาดอักษร:</span>
+                <button onClick={() => setFontSize(s => Math.max(18, s - 2))} class="px-2 py-0.5 bg-slate-700 rounded">-</button>
+                <span class="font-mono text-teal-400">{fontSize}px</span>
+                <button onClick={() => setFontSize(s => Math.min(48, s + 2))} class="px-2 py-0.5 bg-slate-700 rounded">+</button>
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-4 font-mono">
+              <div class="text-right">
+                <span class="text-[10px] text-slate-400 block">เวลารวมที่ใช้</span>
+                <span class="text-lg font-bold text-teal-400">{formatTime(elapsedTime)}</span>
+              </div>
+              <button
+                onClick={() => {
+                  setElapsedTime(0);
+                  if (prompterRef.current) prompterRef.current.scrollTop = 0;
+                }}
+                class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-xl border border-slate-700 text-xs"
+                title="รีเซ็ตเวลา"
+              >
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <div 
+            ref={prompterRef}
+            class="bg-slate-950 rounded-2xl border border-slate-800 p-8 md:p-12 h-[600px] overflow-y-auto custom-scrollbar relative space-y-12"
+          >
+            {script.slides.map((slide, idx) => (
+              <div 
+                key={slide.id} 
+                class={`p-6 rounded-2xl border transition-all ${
+                  activeSlideIdx === idx ? 'bg-slate-900/90 border-teal-500/50 shadow-2xl' : 'bg-slate-900/30 border-slate-800/60 opacity-80'
+                }`}
+                onClick={() => setActiveSlideIdx(idx)}
+              >
+                <div class="flex items-center justify-between mb-3 border-b border-slate-800/80 pb-2">
+                  <span class="text-xs font-mono font-bold text-teal-400 bg-teal-500/10 px-2.5 py-1 rounded-md border border-teal-500/20">
+                    {slide.title}
+                  </span>
+                  <span class="text-xs text-slate-500">เป้าหมายเวลา ~{slide.durationSec} วินาที</span>
+                </div>
+                <p 
+                  style={{ fontSize: `${fontSize}px`, lineHeight: '1.6' }} 
+                  class="font-normal text-slate-100 tracking-wide"
+                >
+                  {slide.script}
+                </p>
+              </div>
+            ))}
+          </div>
+
+        </div>
+      );
+    }
+
+    function ScriptEditorView({ scriptsList, setScriptsList, activeScriptId, setActiveScriptId, apiKey, setShowApiModal }) {
+      const activeScript = scriptsList.find(s => s.id === activeScriptId) || scriptsList[0];
+      const [rawAiPrompt, setRawAiPrompt] = useState('');
+      const [isGenerating, setIsGenerating] = useState(false);
+
+      const handleSlideChange = (slideId, field, value) => {
+        setScriptsList(prev => prev.map(sc => {
+          if (sc.id !== activeScriptId) return sc;
+          const updatedSlides = sc.slides.map(sl => {
+            if (sl.id !== slideId) return sl;
+            return { ...sl, [field]: value };
+          });
+          return { ...sc, slides: updatedSlides };
+        }));
+      };
+
+      const handleAddSlide = () => {
+        const newSlideNum = activeScript.slides.length + 1;
+        const newSlide = {
+          id: Date.now(),
+          slideNumber: newSlideNum,
+          title: `สไลด์ ${newSlideNum}: หัวข้อใหม่`,
+          script: "พิมพ์สคริปต์พูดที่นี่...",
+          keywords: ["คำสำคัญ"],
+          durationSec: 20,
+          notes: "คำแนะนำเพิ่มเติม"
+        };
+
+        setScriptsList(prev => prev.map(sc => {
+          if (sc.id !== activeScriptId) return sc;
+          return { ...sc, slides: [...sc.slides, newSlide] };
+        }));
+      };
+
+      const handleDeleteSlide = (slideId) => {
+        if (activeScript.slides.length <= 1) {
+          alert("สคริปต์ต้องมีอย่างน้อย 1 สไลด์");
+          return;
+        }
+        setScriptsList(prev => prev.map(sc => {
+          if (sc.id !== activeScriptId) return sc;
+          const filtered = sc.slides.filter(sl => sl.id !== slideId);
+          const renumbered = filtered.map((sl, idx) => ({ ...sl, slideNumber: idx + 1 }));
+          return { ...sc, slides: renumbered };
+        }));
+      };
+
+      const handleGenerateScriptWithAi = async () => {
+        if (!rawAiPrompt.trim()) {
+          alert("กรุณากรอกเนื้อหา หรือโครงร่างที่คุณต้องการให้ AI แปลงเป็นสไลด์");
+          return;
+        }
+
+        if (!apiKey) {
+          alert("กรุณาตั้งค่า Gemini API Key เพื่อใช้งานฟังก์ชันนี้");
+          setShowApiModal(true);
+          return;
+        }
+
+        setIsGenerating(true);
+        const newScriptData = await convertRawTextToSlidesWithGemini(rawAiPrompt, apiKey);
+        setIsGenerating(false);
+
+        if (newScriptData) {
+          const newId = "script-" + Date.now();
+          const formattedScript = {
+            id: newId,
+            title: newScriptData.title || "สคริปต์ใหม่จาก Gemini AI",
+            description: newScriptData.description || "สร้างโดย AI จากเนื้อหาดิบของคุณ",
+            slides: newScriptData.slides.map((s, idx) => ({
+              ...s,
+              id: Date.now() + idx,
+              slideNumber: idx + 1
+            }))
+          };
+
+          setScriptsList(prev => [...prev, formattedScript]);
+          setActiveScriptId(newId);
+          setRawAiPrompt('');
+          alert("สร้างสคริปต์ใหม่สำเร็จแล้ว!");
+        }
+      };
+
+      return (
+        <div class="space-y-8 max-w-6xl mx-auto">
+          
+          <div class="bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 p-6 rounded-2xl border border-indigo-500/30 shadow-xl">
+            <h2 class="text-base font-bold text-white flex items-center gap-2 mb-2">
+              <i data-lucide="wand-2" class="w-5 h-5 text-indigo-400"></i> ให้ Gemini AI แปลงเนื้อหาเป็นสไลด์ซ้อมพูดให้อัตโนมัติ
+            </h2>
+            <p class="text-xs text-slate-400 mb-4">วางเนื้อหา บทความ หรือรายละเอียดไอเดียของคุณ แล้ว AI จะทำการสรุปและแบ่งเป็นสไลด์พร้อมคำสำคัญให้อย่างลงตัว</p>
+
+            <textarea
+              rows="3"
+              value={rawAiPrompt}
+              onChange={(e) => setRawAiPrompt(e.target.value)}
+              placeholder="ตัวอย่าง: วางสคริปต์หรือบทพูดสินค้าของคุณลงที่นี่..."
+              class="w-full bg-slate-950/80 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+
+            <div class="mt-3 flex justify-end">
+              <button
+                onClick={handleGenerateScriptWithAi}
+                disabled={isGenerating}
+                class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-xl font-medium flex items-center gap-2 shadow-lg shadow-indigo-600/20 transition-all disabled:opacity-50"
+              >
+                {isGenerating ? (
+                  <>กำลังสร้างสคริปต์สไลด์...</>
+                ) : (
+                  <><i data-lucide="sparkles" class="w-4 h-4"></i> แปลงเป็นสคริปต์ Pitching</>
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl space-y-6">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+              <div>
+                <h2 class="text-base font-bold text-white">แก้ไขเนื้อหาสคริปต์: {activeScript.title}</h2>
+                <p class="text-xs text-slate-400">ปรับแต่งบทพูด คำสำคัญ และสไลด์แต่ละหน้าได้ตามต้องการ</p>
+              </div>
+
+              <button
+                onClick={handleAddSlide}
+                class="bg-teal-600 hover:bg-teal-500 text-white text-xs px-3 py-2 rounded-xl font-medium flex items-center gap-1.5"
+              >
+                <i data-lucide="plus" class="w-4 h-4"></i> เพิ่มสไลด์ใหม่
+              </button>
+            </div>
+
+            <div class="space-y-4">
+              {activeScript.slides.map((slide) => (
+                <div key={slide.id} class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                  <div class="flex items-center justify-between gap-3">
+                    <span class="text-xs font-mono font-bold text-teal-400 bg-teal-500/10 px-2.5 py-1 rounded">
+                      สไลด์ #{slide.slideNumber}
+                    </span>
+                    <input 
+                      type="text"
+                      value={slide.title}
+                      onChange={(e) => handleSlideChange(slide.id, 'title', e.target.value)}
+                      class="flex-grow bg-slate-900 border border-slate-800 rounded-lg px-3 py-1 text-xs font-semibold text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    />
+                    <button
+                      onClick={() => handleDeleteSlide(slide.id)}
+                      class="text-slate-500 hover:text-red-400 p-1 text-xs"
+                      title="ลบสไลด์นี้"
+                    >
+                      <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                  </div>
+
+                  <div>
+                    <label class="text-[11px] text-slate-400 block mb-1">บทพูดที่ต้องซ้อมพูด:</label>
+                    <textarea 
+                      rows="3"
+                      value={slide.script}
+                      onChange={(e) => handleSlideChange(slide.id, 'script', e.target.value)}
+                      class="w-full bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500 leading-relaxed"
+                    />
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <label class="text-[11px] text-slate-400 block mb-1">คำสำคัญ (ขั้นด้วยเครื่องหมายจุลภาค ,):</label>
+                      <input 
+                        type="text"
+                        value={Array.isArray(slide.keywords) ? slide.keywords.join(', ') : slide.keywords}
+                        onChange={(e) => handleSlideChange(slide.id, 'keywords', e.target.value.split(',').map(k => k.trim()))}
+                        class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                      />
+                    </div>
+                    <div>
+                      <label class="text-[11px] text-slate-400 block mb-1">คำแนะนำ / โน้ตการนำเสนอ:</label>
+                      <input 
+                        type="text"
+                        value={slide.notes || ''}
+                        onChange={(e) => handleSlideChange(slide.id, 'notes', e.target.value)}
+                        class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      );
+    }
+
+    function AnalyticsView({ script }) {
+      const totalSlides = script.slides.length;
+      const practicedSlides = script.slides.filter(s => (s.practicedCount || 0) > 0).length;
+      const avgScore = Math.round(
+        script.slides.reduce((acc, s) => acc + (s.bestScore || 0), 0) / totalSlides
+      );
+
+      return (
+        <div class="max-w-5xl mx-auto space-y-6">
+          
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800">
+              <span class="text-xs text-slate-400 block">สไลด์ที่ซ้อมไปแล้ว</span>
+              <span class="text-2xl font-bold text-teal-400 mt-1 block">{practicedSlides} / {totalSlides} หน้า</span>
+              <div class="w-full bg-slate-800 h-2 rounded-full mt-3 overflow-hidden">
+                <div class="bg-teal-500 h-full rounded-full" style={{ width: `${(practicedSlides / totalSlides) * 100}%` }}></div>
+              </div>
+            </div>
+
+            <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800">
+              <span class="text-xs text-slate-400 block">คะแนนความแม่นยำเฉลี่ย</span>
+              <span class="text-2xl font-bold text-indigo-400 mt-1 block">{avgScore || 0}%</span>
+              <p class="text-[11px] text-slate-500 mt-2">คำนวณจากสไลด์ทั้งหมดที่มีการบันทึกเสียง</p>
+            </div>
+
+            <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800">
+              <span class="text-xs text-slate-400 block">สถานะความพร้อม Pitching</span>
+              <span class="text-2xl font-bold text-emerald-400 mt-1 block">
+                {avgScore > 80 ? 'พร้อมนำเสนอสูง! 🚀' : avgScore > 50 ? 'กำลังเข้าที่เข้าทาง 👍' : 'ควรซ้อมเพิ่มอีกนิด 💪'}
+              </span>
+              <p class="text-[11px] text-slate-500 mt-2">ฝึกซ้อมสม่ำเสมอช่วยสร้างความมั่นใจ</p>
+            </div>
+          </div>
+
+          <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
+            <h3 class="text-sm font-bold text-white mb-4 flex items-center gap-2">
+              <i data-lucide="list-checks" class="w-4 h-4 text-teal-400"></i> รายละเอียดความพร้อมรายสไลด์
+            </h3>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-950 text-slate-400 uppercase font-mono border-b border-slate-800">
+                  <tr>
+                    <th class="p-3">สไลด์</th>
+                    <th class="p-3">หัวข้อสไลด์</th>
+                    <th class="p-3">จำนวนซ้อม</th>
+                    <th class="p-3">คะแนนดีสุด</th>
+                    <th class="p-3">สถานะ</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                  {script.slides.map(s => (
+                    <tr key={s.id} class="hover:bg-slate-800/40 transition-colors">
+                      <td class="p-3 font-mono font-bold text-teal-400">#{s.slideNumber}</td>
+                      <td class="p-3 font-medium text-slate-200">{s.title}</td>
+                      <td class="p-3 font-mono">{s.practicedCount || 0} ครั้ง</td>
+                      <td class="p-3 font-mono font-bold text-indigo-400">{s.bestScore ? `${s.bestScore}%` : '-'}</td>
+                      <td class="p-3">
+                        {s.bestScore >= 80 ? (
+                          <span class="bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30">จำได้แม่น</span>
+                        ) : s.bestScore >= 50 ? (
+                          <span class="bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30">ซ้อมเพิ่มได้</span>
+                        ) : (
+                          <span class="bg-slate-800 text-slate-400 px-2 py-0.5 rounded">ยังไม่ซ้อม</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      );
+    }
+
+    window.onload = function() {
+      const rootElement = document.getElementById('root');
+      const root = ReactDOM.createRoot(rootElement);
+      root.render(<App />);
+    };
+  </script>
+</body>
+</html>
